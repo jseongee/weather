@@ -4,6 +4,8 @@ struct ContentView: View {
 
     let service = WeatherService()
 
+    @StateObject var locationManager = LocationManager()
+
     @State private var cityName = ""
     @State private var weather: WeatherResponse?
     @State private var errorMessage: String?
@@ -49,6 +51,18 @@ struct ContentView: View {
             Spacer()
         }
         .padding(.top, 40)
+        .onChange(of: locationManager.location) { _, newLocation in
+            guard let coord = newLocation?.coordinate else { return }
+
+            Task {
+                do {
+                    weather = try await service.fetchWeather(lat: coord.latitude, lon: coord.longitude)
+                    errorMessage = nil
+                } catch {
+                    errorMessage = "Failed to retrieve location-based weather information."
+                }
+            }
+        }
     }
 
     private func onSearchTapped() {
